@@ -18,7 +18,22 @@
 
 -on_load(init/0).
 
-init() -> erlang:load_nif(filename:join(nacl_app:priv_dir(), ?MODULE), 0).
+init() ->
+  Path = case application:get_env(code,sopath) of
+           {ok, CodePath} ->
+             CodePath;
+           _ ->
+             case code:priv_dir(?MODULE) of
+               {error, _} ->
+                 EbinDir = filename:dirname(code:which(?MODULE)),
+                 AppPath = filename:dirname(EbinDir),
+                 filename:join(AppPath, "priv");
+               CodePath ->
+                 CodePath
+             end
+         end,
+  erlang:load_nif(filename:join(Path, ?MODULE), 0).
+
 
 randombytes(_Count) -> erlang:nif_error(not_loaded).
 hash(_Bytes) -> erlang:nif_error(not_loaded).
